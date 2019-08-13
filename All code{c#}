@@ -1,0 +1,1074 @@
+Here is a list of most used code snippets used in Dynamics 365 CRM.
+
+Note: Make sure to add required namespace whenever required while inserting code.
+
+Most frequently used namespaces are given below,
+
+using System;
+using System.Configuration;
+using System.ServiceModel;
+// These namespaces are found in the Microsoft.Crm.Sdk.Proxy.dll assembly
+// located in the SDK\bin folder of the SDK download.
+using Microsoft.Crm.Sdk.Messages;
+// These namespaces are found in the Microsoft.Xrm.Sdk.dll assembly
+// located in the SDK\bin folder of the SDK download.
+using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Query;
+using Microsoft.Xrm.Tooling.Connector;
+// These namespaces are found in the Microsoft.Xrm.Client.dll assembly
+// located in the SDK\bin folder of the SDK download.
+using System.Collections.Generic;
+Most frequently used code snippets are given below,
+
+Code to connect Organization (C#)
+String userName = "";
+String userPassword = "";
+String userDomain= "";
+String crmServer = "";
+String crmPort = ";";
+String crmOrg = "";
+String homeRealm = "";
+NetworkCredential netCred =
+new  System.Net.NetworkCredential(userName, userPassword, userDomain, homeRealm);
+CrmServiceClient  crmSvc =
+new CrmServiceClient(netCred, crmServer, crmPort, crmOrg);
+Derive Context, CRM service object in Plugin (C#)
+IPluginExecutionContext context =
+(IPluginExecutionContext) serviceProvider.GetService(typeof(IPluginExecutionContext));
+IOrganizationServiceFactory serviceFactory =
+(IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
+IOrganizationService Service = 
+ServiceFactory.CreateOrganizationService(context.UserId);
+Validate if a specific attribute present in the plugin context input parameter (C#)
+if (context.InputParameters.Contains("Target") &&  Context.InputParameters["Target"] is Entity)
+{
+ //Your code goes here
+}
+Check if a specific attribute present in a entity (C#)
+if (entityObject.Attributes.ContainsKey("")
+{
+//Your code goes here
+}
+Get Value of attribute from entity (C#)
+entityObject.GetAttributeValue("");
+entityObject. GetAttributeValue  ("").Id.ToString();
+bool myAttributeVal  = entityObject.GetAttributeValue("")
+string myAttributeVal  = entityObject.GetAttributeValue("")
+Convert EntityCollection to DataTable (C#)
+public DataTable convertEntityCollectionToDataTable(EntityCollection EC)
+{
+DataTable dt = new DataTable();
+int totalCount = EC.Entities.Count;
+for (int i = 0; i
+Check if dataset is valid (C#)
+bool flag=false;
+if(Objdataset.Tables.Count>0
+if(Objdataset.Tables[0].Rows.Count>0
+Flag=true;
+}
+}
+Retrieve Optionset Value from an AliasedValue (C#)
+AliasedValue aliasedval=
+entityObject.GetAttributeValue("").Value;
+int optionSetVal = ((OptionSetValue) aliasedval).Value;
+//NOTE: for other datatypes just use the datatype in above line of code to get the value.
+Code to stop Plugin from infinite loop (C#)
+// add this code before your actual plugin logic starts
+if (context.Depth >1)
+return;
+Code to use Shared Variable in Plugins (C#)
+//Set the shared variable Value
+context.SharedVariables.Add("PrimaryContactbject)contact.ToString());
+//Get the Shared Variable Value
+Guid contact =new Guid((string)context.SharedVariables["PrimaryContact"]);
+Get the Pre & Post Entity Images in Plugin (C#)
+Entity preEntityImage= (Entity)context.PreEntityImages["ImageName"];
+Entity postEntityImage = (Entity)context.PostEntityImages["ImageName"];
+//NOTE : The Image Names are defined in Plugin registration tool against the SDK steps.
+Trace Messages using Tracing service in Plugin (C#)
+ITracingService tracingService =
+(ITracingService)serviceProvider.GetService(typeof(ITracingService));
+tracingService.Trace ("");
+Get Optionset Text in Plugin (C#)
+if(entity.Contains(""))
+{
+string optionsettext = entity.FormattedValues["attributename"];
+}
+Retrieve entity record data using Query Expression(C#)
+//Query for the GUID of the Account using Account Name
+QueryExpression query = new QueryExpression("account");
+string[] cols = { "accountid", "name"};
+query.Criteria = new FilterExpression();
+query.Criteria.AddCondition("name", ConditionOperator.Equal, );
+query.ColumnSet = new ColumnSet(cols);
+EntityCollection account = crmServices.RetrieveMultiple(query);
+//Casting the reference to GUID
+Guid accountId = (Guid)account[0].Attributes["accountid"];
+Retrieve entity record data using Fetch XML(C#)
+string fetchxml = @" //Place your fetch xml here
+
+ ";
+EntityCollection result = _serviceProxy.RetrieveMultiple(new FetchExpression(fetchxml));
+Retrieve entity record data using Guid of the record(C#)
+ColumnSet cs = new ColumnSet("attribute1","attribute2");
+Entity result = _serviceProxy.Retrieve ("", new Guid(""), cs);
+Update Entity Record (C#)
+Entity entityObj = new Entity();
+entityObj.LogicalName = "";
+entityObj.Id = 
+entityObj. = 
+crmservice.Update(entityObj);
+
+//Note: While assigning the value use the correct datatype converison. Lets say you are updating an //optionset then you have to use new OptionSetValue().
+Delete Entity Record (C#)
+crmservice.Delete("",new Guid(""));
+Create an Entity Record using CRM service (C#)
+Entity entityObj = new Entity();
+entityObj.LogicalName = "";
+entityObj. = ;
+entityObj. = ;
+crmservice.Create(entityObj);
+Retrieve record using paging if more record present (C#)
+// The number of records per page to retrieve.
+int queryCount = 200;
+// Initialize the page number.
+int pageNumber = 1;
+// Initialize the number of records.
+int recordCount = 0;
+
+// Define the condition expression for retrieving records.
+ConditionExpression pagecondition = new ConditionExpression();
+pagecondition.AttributeName = "parentaccountid";
+pagecondition.Operator = ConditionOperator.Equal;
+pagecondition.Values.Add(_parentAccountId);
+
+// Create the query expression and add condition.
+QueryExpression pagequery = new QueryExpression();
+pagequery.EntityName = "account";
+pagequery.Criteria.AddCondition(pagecondition);
+pagequery.ColumnSet.AddColumns("name", "emailaddress1");
+
+// Assign the pageinfo properties to the query expression.
+pagequery.PageInfo = new PagingInfo();
+pagequery.PageInfo.Count = queryCount;
+pagequery.PageInfo.PageNumber = pageNumber;
+
+// The current paging cookie. When retrieving the first page
+// pagingCookie should be null.
+pagequery.PageInfo.PagingCookie = null;
+Console.WriteLine("Retrieving account records in pages...\n");
+Console.WriteLine("#\tAccount Name\t\tEmail Address");
+while (true)
+{
+// Retrieve the page.
+EntityCollection results =_service.RetrieveMultiple(pagequery);
+if (results.Entities != null)
+{
+// Retrieve all records from the result set.
+foreach (Account acct in results.Entities)
+{
+Console.WriteLine("{0}.\t{1}\t{2}", ++recordCount,
+acct.Name, acct.EMailAddress1);
+}
+}
+// Check for more records, if it returns true.
+if (results.MoreRecords)
+{
+Console.WriteLine("\n****************\nPage number {0}\n****************",
+pagequery.PageInfo.PageNumber);
+Console.WriteLine("#\tAccount Name\t\tEmail Address");
+
+// Increment the page number to retrieve the next page.
+pagequery.PageInfo.PageNumber++;
+
+// Set the paging cookie to the paging cookie returned from current results.
+pagequery.PageInfo.PagingCookie = results.PagingCookie;
+}
+else
+{
+// If no more records are in the result nodes, exit the loop.
+break;
+}
+}
+Get Optionset Values and Text Metadata in CRM (C#)
+var attributeRequest = new RetrieveAttributeRequest
+{
+EntityLogicalName = "entityName",
+LogicalName = "attributeName",
+RetrieveAsIfPublished = true
+};
+var attributeResponse = (RetrieveAttributeResponse)service.Execute(attributeRequest);
+var attributeMetadata = (EnumAttributeMetadata)attributeResponse.AttributeMetadata;
+
+var optionList = (from o in attributeMetadata.OptionSet.Options
+select new { Value = o.Value, Text = o.Label.UserLocalizedLabel.Label }).ToList();
+Update the Status of Records (C#)
+Guid leadId = new Guid("D020F344-A470-E111-B9DA-00155D04DC01");
+SetStateRequest request = new SetStateRequest
+{
+EntityMoniker = new EntityReference("lead", leadId),
+State = new OptionSetValue(2),
+Status = new OptionSetValue(6)
+};
+crmService.Execute(request);
+//NOTE: State : Active/Inactive
+
+Read Excel Sheet Record to Data Set (C#)
+//Use the below namespace first:
+using Excel = Microsoft.Office.Interop.Excel;
+using System.Data;
+//Code to read excel data
+OleDbConnection  conn =
+new OleDbConnection("provider=Microsoft.Jet.OLEDB.4.0;Data Source='c:\\test.xls';Extendedperties=Excel 8.0;");
+OleDbDataAdapter  cmd = new OleDbDataAdapter("select * from [Sheet1$]", conn);
+cmd.TableMappings.Add("TableestTable");
+DataSet DtSet = DataSet();
+cmd.Fill(DtSet);
+
+Supress Duplicate Detection Rule while creating record (C#)
+// Create operation by suppressing duplicate detection
+CreateRequest reqCreate = new CreateRequest();
+reqCreate.Target = account;
+reqCreate.Parameters.Add("SuppressDuplicateDetectionue);
+// NOTE : Change to false to activate the duplicate detection.
+CreateResponse createResponse = (CreateResponse)_service.Execute(reqCreate);
+Guid _dupAccountId = createResponse.id;
+// Retrieve the account containing with its few attributes.
+ColumnSet cols = new ColumnSet(
+new String[] { "name", "accountnumber"});
+Entity retrievedAccount = _service.Retrieve("account", _dupAccountId, cols);
+// Update the existing account with new account number.
+retrievedAccount.AccountNumber = "ACC006";
+// Update operation – update record, if a duplicate is not found.
+UpdateRequest reqUpdate = new UpdateRequest();
+reqUpdate.Target = retrievedAccount;
+reqUpdate["SuppressDuplicateDetection"] = false; // Duplicate detection is activated.
+// Update the account record.
+UpdateResponse updateResponse = (UpdateResponse)_service.Execute(reqUpdate);
+
+Assigning Values to Different DataType Field while creating Record (C#)
+DataType	Example
+Single Line of Text	account[“name”] = Convert.ToString(“Microsoft India”); //String
+Option Set	account[“accountcategorycode”] = new OptionSetValue(1); //Int
+Two Options	account[“donotbulkemail”] = false; //boolean value -true/false
+Image	entityObj[“entityimage”] = File.ReadAllBytes(“Images\\144×144.png”);
+Whole Number	account[“numberofemployees”] = 50; //int Value
+Floating Point Number	account[“address1_latitude”] = Convert.ToDouble(-0.330); //double
+Decimal Number	account[“attributename”] = Convert.ToDecimal(3.5); //deciaml
+Currency	account[“revenue”] = new Money(50.60); //deciml Value
+Multiple Lines of Text	account[“description”] = Convert.ToString(“this is a great acc”);
+Date and Time	account[“lastusedincampaign”] = new DateTime(2017,11,23); //yyyy,mm,dd
+Lookup	account[“address1_addressid”] = new EntityReference(“address”,new Guid(“11111111-1111-1111-1111-111111111111”)); //32 bit guid
+Generate Entity Metadata using C#
+RetrieveAllEntitiesRequest request = new RetrieveAllEntitiesRequest()
+{
+EntityFilters = EntityFilters.Entity,
+RetrieveAsIfPublished = true
+};
+
+// Retrieve the MetaData.
+RetrieveAllEntitiesResponse response = (RetrieveAllEntitiesResponse)_serviceProxy.Execute(request);
+
+// Create an instance of StreamWriter to write text to a file.
+// The using statement also closes the StreamWriter.
+// To view this file, right click the file and choose open with Excel.
+// Excel will figure out the schema and display the information in columns.
+
+String filename = String.Concat("EntityInfo.xml");
+using (StreamWriter sw = new StreamWriter(filename))
+{
+// Create Xml Writer.
+XmlTextWriter metadataWriter = new XmlTextWriter(sw);
+
+// Start Xml File.
+metadataWriter.WriteStartDocument();
+
+// Metadata Xml Node.
+metadataWriter.WriteStartElement("Metadata");
+
+
+foreach (EntityMetadata currentEntity in response.EntityMetadata)
+{
+//if (currentEntity.IsIntersect.Value == false)
+if (true)
+{
+// Start Entity Node
+metadataWriter.WriteStartElement("Entity");
+
+// Write the Entity's Information.
+metadataWriter.WriteElementString("EntitySchemaName", currentEntity.SchemaName);
+metadataWriter.WriteElementString("OTC", currentEntity.ObjectTypeCode.ToString());
+metadataWriter.WriteElementString("OwnershipType", currentEntity.OwnershipType.Value.ToString());
+if (currentEntity.DisplayName.UserLocalizedLabel != null)
+metadataWriter.WriteElementString("DisplayName", currentEntity.DisplayName.UserLocalizedLabel.Label);
+if (currentEntity.DisplayCollectionName.UserLocalizedLabel != null)
+metadataWriter.WriteElementString("DisplayCollectionName", currentEntity.DisplayCollectionName.UserLocalizedLabel.Label);
+metadataWriter.WriteElementString("IntroducedVersion", currentEntity.IntroducedVersion.ToString());
+metadataWriter.WriteElementString("AutoRouteToOwnerQueue", currentEntity.AutoRouteToOwnerQueue.ToString());
+metadataWriter.WriteElementString("CanBeInManyToMany", currentEntity.CanBeInManyToMany.Value.ToString());
+metadataWriter.WriteElementString("CanBePrimaryEntityInRelationship", currentEntity.CanBePrimaryEntityInRelationship.Value.ToString());
+metadataWriter.WriteElementString("CanBeRelatedEntityInRelationship", currentEntity.CanBeRelatedEntityInRelationship.Value.ToString());
+metadataWriter.WriteElementString("CanCreateAttributes", currentEntity.CanCreateAttributes.Value.ToString());
+metadataWriter.WriteElementString("CanCreateCharts", currentEntity.CanCreateCharts.Value.ToString());
+metadataWriter.WriteElementString("CanCreateForms", currentEntity.CanCreateForms.Value.ToString());
+metadataWriter.WriteElementString("CanCreateViews", currentEntity.CanCreateViews.Value.ToString());
+metadataWriter.WriteElementString("CanModifyAdditionalSettings", currentEntity.CanModifyAdditionalSettings.Value.ToString());
+metadataWriter.WriteElementString("CanTriggerWorkflow", currentEntity.CanTriggerWorkflow.Value.ToString());
+
+metadataWriter.WriteElementString("IsActivity", currentEntity.IsActivity.Value.ToString());
+//metadataWriter.WriteElementString("ActivityTypeMask", currentEntity.ActivityTypeMask.ToString());
+
+metadataWriter.WriteElementString("IsActivityParty", currentEntity.IsActivityParty.Value.ToString());
+
+metadataWriter.WriteElementString("IsAuditEnabled", currentEntity.IsAuditEnabled.Value.ToString());
+metadataWriter.WriteElementString("IsAvailableOffline", currentEntity.IsAvailableOffline.ToString());
+metadataWriter.WriteElementString("IsChildEntity", currentEntity.IsChildEntity.ToString());
+metadataWriter.WriteElementString("IsConnectionsEnabled", currentEntity.IsConnectionsEnabled.ManagedPropertyLogicalName.ToString());
+metadataWriter.WriteElementString("IsCustomEntity", currentEntity.IsCustomEntity.Value.ToString());
+metadataWriter.WriteElementString("IsCustomizable", currentEntity.IsCustomizable.Value.ToString());
+
+metadataWriter.WriteElementString("IsDocumentManagementEnabled", currentEntity.IsDocumentManagementEnabled.Value.ToString());
+metadataWriter.WriteElementString("IsDuplicateDetectionEnabled", currentEntity.IsDuplicateDetectionEnabled.Value.ToString());
+if (currentEntity.IsEnabledForCharts != null)
+metadataWriter.WriteElementString("IsEnabledForCharts", currentEntity.IsEnabledForCharts.Value.ToString());
+metadataWriter.WriteElementString("IsImportable", currentEntity.IsImportable.Value.ToString());
+metadataWriter.WriteElementString("IsIntersect", currentEntity.IsIntersect.Value.ToString());
+
+metadataWriter.WriteElementString("IsMailMergeEnabled", currentEntity.IsMailMergeEnabled.Value.ToString());
+metadataWriter.WriteElementString("IsManaged", currentEntity.IsManaged.Value.ToString());
+metadataWriter.WriteElementString("IsMappable", currentEntity.IsMappable.Value.ToString());
+
+metadataWriter.WriteElementString("IsReadingPaneEnabled", currentEntity.IsReadingPaneEnabled.Value.ToString());
+metadataWriter.WriteElementString("IsRenameable", currentEntity.IsRenameable.Value.ToString());
+metadataWriter.WriteElementString("IsValidForAdvancedFind", currentEntity.IsValidForAdvancedFind.Value.ToString());
+metadataWriter.WriteElementString("IsValidForQueue", currentEntity.IsValidForQueue.Value.ToString());
+metadataWriter.WriteElementString("IsVisibleInMobile", currentEntity.IsVisibleInMobile.Value.ToString());
+
+metadataWriter.WriteElementString("PrimaryIdAttribute", currentEntity.PrimaryIdAttribute);
+metadataWriter.WriteElementString("PrimaryNameAttribute", currentEntity.PrimaryNameAttribute);
+metadataWriter.WriteElementString("ReportViewName", currentEntity.ReportViewName);
+metadataWriter.WriteElementString("RecurrenceBaseEntityLogicalName", currentEntity.RecurrenceBaseEntityLogicalName);
+if (currentEntity.Description.UserLocalizedLabel != null)
+metadataWriter.WriteElementString("Description", currentEntity.Description.UserLocalizedLabel.Label);
+
+// End Entity Node
+metadataWriter.WriteEndElement();
+}
+}
+
+// End Metadata Xml Node
+metadataWriter.WriteEndElement();
+metadataWriter.WriteEndDocument();
+
+// Close xml writer.
+metadataWriter.Close();
+}
+Check if Old Value and New Value of Field are different in Plugin Images (C#)
+Entity preEntityImage= (Entity)context.PreEntityImages["ImageName"];
+Entity postEntityImage = (Entity)context.PostEntityImages["ImageName"];
+var oldNameValue = preEntityImage.GetAttribute("name");
+var newNameValue = postEntityImage.GetAttribute("name");
+if(oldNameValue.ToLower() != newNameValue.ToLower())
+{
+//Your code goes here
+}
+
+Early Bound Syntax creating Contact Record (C#)
+Contact contact = new Contact()
+{
+FirstName = "Charles",
+LastName = "Brown",
+Address1_Line1 = "123 Main St."
+};
+_contactId = _serviceProxy.Create(contact);
+Late Bound Syntax creating Contact Record (C#)
+Entity contactEntity = new Entity("contact");
+contactent["firstname"] = "Charles";
+contactent["lastname"] = "Brown ";
+contactent["address1_line1"] = "123 Main St.";
+Guid _contactId = _serviceProxy.Create(contactEntity);
+
+Declaring Input & Output Arguments, Default Value & Set Requirement Level of the Parameter in Custom Workflow Activities(C#)
+For Boolean Type(Input)
+[Input("Bool input")]
+[Default("True")]
+public InArgument BoolFlag { get; set; }
+
+For Boolean Type(Output)
+[Output("Bool input")]
+public OutArgument BoolFlag { get; set; }
+
+For Boolean Type (Both Input and Output)
+[Input("Bool input")]
+[Output("Bool output")]
+[Default("False")]
+public InOutArgument BoolFlag { get; set; }
+
+DateTime
+[Input("DateTime input")]
+[Output("DateTime output")]
+[Default("2013-07-09T02:54:00Z")]
+public InOutArgument DateTime { get; set; }
+
+Decimal
+[Input("Decimal input")]
+[Output("Decimal output")]
+[Default("20.75")]
+public InOutArgument Decimal { get; set; }
+
+Double
+[Input("Double input")]
+[Output("Double output")]
+[Default("200.2")]
+public InOutArgument Double { get; set; }
+
+Integer
+[Input("Int input")]
+[Output("Int output")]
+[Default("2322")]
+public InOutArgument Int { get; set; }
+
+Money (Currency)
+[Input("Money input")]
+[Output("Money output")]
+[Default("232.3")]
+public InOutArgument Money { get; set; }
+
+OptionSetValue
+[Input("OptionSetValue input")]
+[Output("OptionSetValue output")]
+[AttributeTarget("account", "industrycode")]
+[Default("3")]
+public InOutArgument OptionSetValue { get; set; }
+
+String
+[Input("String input")]
+[Output("String output")]
+[Default("string default")]
+public InOutArgument String { get; set; }
+
+Entity Reference
+[Input("EntityReference input")]
+[Output("EntityReference output")]
+[ReferenceTarget("account")]
+[Default("3B036E3E-94F9-DE11-B508-00155DBA2902", "account")]
+public InOutArgument AccountReference { get; set; }.
+
+Required Argument Attribute
+[RequiredArgument]
+[Input("Update next Anniversary date for")]
+[ReferenceTarget("contact")]
+public InArgument Contact { get; set; }
+
+Output Parameters
+//this is the name of the parameter that will be returned back to the workflow
+[Output("Credit Score")]
+//this line identifies the specific attribute which will be passed back to the workflow
+[AttributeTarget(CustomEntity, "new_creditscore")]
+// declares the output parameter and declares the proper data type of the parameter being passed back.
+public OutArgument CreditScore {get;set;}
+
+
+
+
+Get Value from Input Argument in Custom Workflow Activities (C#)
+If Input argument is declared as below then we can get the value as explained below.
+[Input("Date Of Birth")]
+public InArgument DOB { get; set; }
+
+protected override void Execute(CodeActivityContext context)
+{
+DateTime dtDOB = DOB.Get(context);
+}
+
+Set Value from Out Argument in Custom Workflow Activities (C#)
+If Output argument is declared as below then we can get the value as explained below.
+[Output("FinalAge")]
+public OutArgument Age { get; set; }
+
+protected override void Execute(CodeActivityContext context)
+{
+int CalculatedAge=30;
+Age.Set(context, CalculatedAge);
+}
+
+A Sample Custom Workflow Code (C#)
+using System.Collections.Generic;
+using System.Linq;
+using System.Activities;
+using Microsoft.Xrm.Sdk.Workflow;
+namespace GetAge
+{
+public sealed class CalculateAge:CodeActivity
+{
+[Input("Date Of Birth")]
+public InArgument DOB { get; set; }
+
+protected override void Execute(CodeActivityContext context)
+{
+DateTime dtDOB = DOB.Get(context);
+int CalculatedAge =
+Convert.ToInt32((DateTime.Now.Subtract(dtDOB).TotalDays)/365);
+Age.Set(context, CalculatedAge);
+}
+
+[Output("FinalAge")]
+public OutArgument Age { get; set; }
+}
+}
+A Sample Plugin Code (C#)
+using System;
+using System.ServiceModel;
+using Microsoft.Xrm.Sdk;
+namespace Microsoft.Crm.Sdk.Samples
+{
+public class FollowupPlugin: IPlugin
+{
+/// 
+/// A plug-in that creates a follow-up task activity when a new account is created.
+/// 
+/// Register this plug-in on the Create message, account entity,
+/// and asynchronous mode.
+/// 
+public void Execute(IServiceProvider serviceProvider)
+{
+//Extract the tracing service for use in debugging sandboxed plug-ins.
+ITracingService tracingService =
+(ITracingService)serviceProvider.GetService(typeof(ITracingService));
+
+// Obtain the execution context from the service provider.
+IPluginExecutionContext context = (IPluginExecutionContext)
+serviceProvider.GetService(typeof(IPluginExecutionContext));
+
+// The InputParameters collection contains all the data passed in the message request.
+if (context.InputParameters.Contains("Target") &amp;&amp;
+context.InputParameters["Target"] is Entity)
+{
+// Obtain the target entity from the input parameters.
+Entity entity = (Entity)context.InputParameters["Target"];
+
+// Verify that the target entity represents an account.
+// If not, this plug-in was not registered correctly.
+if (entity.LogicalName != "account")
+return;
+
+try
+{
+// Create a task activity to follow up with the account customer in 7 days.
+Entity followup = new Entity("task");
+
+followup["subject"] = "Send e-mail to the new customer.";
+followup["description"] =
+"Follow up with the customer. Check if there are any new issues that need resolution.";
+followup["scheduledstart"] = DateTime.Now.AddDays(7);
+followup["scheduledend"] = DateTime.Now.AddDays(7);
+followup["category"] = context.PrimaryEntityName;
+
+// Refer to the account in the task activity.
+if (context.OutputParameters.Contains("id"))
+{
+Guid regardingobjectid = new Guid(context.OutputParameters["id"].ToString());
+string regardingobjectidType = "account";
+
+followup["regardingobjectid"] =
+new EntityReference(regardingobjectidType, regardingobjectid);
+}
+
+// Obtain the organization service reference.
+IOrganizationServiceFactory serviceFactory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
+IOrganizationService service = serviceFactory.CreateOrganizationService(context.UserId);
+
+// Create the task in Microsoft Dynamics CRM.
+tracingService.Trace("FollowupPluginating the task activity.");
+service.Create(followup);
+}
+catch (FaultException ex)
+{
+throw new InvalidPluginExecutionException("An error occurred in the FollowupPlugin plug-in.", ex);
+}
+
+catch (Exception ex)
+{
+tracingService.Trace("FollowupPlugin", ex.ToString());
+throw;
+}
+}
+}
+}
+}
+
+Write Log Messages into a Text File
+Public void WriteLog(string msg)
+{
+String datestamp = DateTime.Now.Date.ToString("dtring path = string.Format(@"E:\AppServ\{0}_log.txt", datestamp);  // define the path to save the file
+if (!File.Exists(path)){ File.Create(path); }
+
+TextWriter tw = new StreamWriter(path);
+tw.WriteLine(msg); tw.Close();
+}
+Code for Exception handling (C#)
+try
+{
+//Your code
+}
+catch (FaultException ex)
+{
+Console.WriteLine("The application terminated with an error.");
+Console.WriteLine("Timestamp: {0}", ex.Detail.Timestamp);
+Console.WriteLine("Code: {0}", ex.Detail.ErrorCode);
+Console.WriteLine("Message: {0}", ex.Detail.Message);
+Console.WriteLine("Inner Fault: {0}",
+null == ex.Detail.InnerFault ? "No Inner Fault": "Has Inner Fault");
+}
+catch (System.TimeoutException ex)
+{
+Console.WriteLine("The application terminated with an error.");
+Console.WriteLine("Message: {0}", ex.Message);
+Console.WriteLine("Stack Trace: {0}", ex.StackTrace);
+Console.WriteLine("Inner Fault: {0}",
+null == ex.InnerException.Message ? "No Inner Fault": ex.InnerException.Message);
+}
+catch (System.Exception ex)
+{
+Console.WriteLine("The application terminated with an error.");
+Console.WriteLine(ex.Message);
+
+// Display the details of the inner exception.
+if (ex.InnerException != null)
+{
+Console.WriteLine(ex.InnerException.Message);
+FaultException fe = ex.InnerException
+as FaultException;
+if (fe != null)
+{
+Console.WriteLine("Timestamp: {0}", fe.Detail.Timestamp);
+Console.WriteLine("Code: {0}", fe.Detail.ErrorCode);
+Console.WriteLine("Message: {0}", fe.Detail.Message);
+Console.WriteLine("Trace: {0}", fe.Detail.TraceText);
+Console.WriteLine("Inner Fault: {0}",
+null == fe.Detail.InnerFault ? "No Inner Fault": "Has Inner Fault");
+}
+}
+}
+
+Create Outlook offline Filters (C#)
+String contactName = String.Format("offlineFilteredContact {0}", DateTime.Now.ToLongTimeString());
+String fetchXml =
+String.Format(""+
+""+
+"", contactName);
+SavedQuery filter = new SavedQuery();
+filter.FetchXml = fetchXml;
+filter.IsQuickFindQuery = false;
+filter.QueryType = SavedQueryQueryType.OfflineFilters;
+filter.ReturnedTypeCode = Contact.EntityLogicalName;
+filter.Name = "ReadOnlyFilter_"+ contactName;
+filter.Description = "Sample offline filter for Contact entity";
+_offlineFilter = _serviceProxy.Create(filter);
+
+Encryption and Decryption using C#
+using System;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace SecurityModule
+{
+public class EncryptionManager
+{
+public static string Encrypt(string input, string key)
+{
+byte[] inputArray = UTF8Encoding.UTF8.GetBytes(input);
+TripleDESCryptoServiceProvider tripleDES = new TripleDESCryptoServiceProvider();
+tripleDES.Key = UTF8Encoding.UTF8.GetBytes(key);
+tripleDES.Mode = CipherMode.ECB;
+tripleDES.Padding = PaddingMode.PKCS7;
+ICryptoTransform cTransform = tripleDES.CreateEncryptor();
+byte[] resultArray = cTransform.TransformFinalBlock(inputArray, 0, inputArray.Length);
+tripleDES.Clear();
+return Convert.ToBase64String(resultArray, 0, resultArray.Length);
+}
+public static string Decrypt(string input, string key)
+{
+byte[] inputArray = Convert.FromBase64String(input);
+TripleDESCryptoServiceProvider tripleDES = new TripleDESCryptoServiceProvider();
+tripleDES.Key = UTF8Encoding.UTF8.GetBytes(key);
+tripleDES.Mode = CipherMode.ECB;
+tripleDES.Padding = PaddingMode.PKCS7;
+ICryptoTransform cTransform = tripleDES.CreateDecryptor();
+byte[] resultArray = cTransform.TransformFinalBlock(inputArray, 0, inputArray.Length);
+tripleDES.Clear();
+return UTF8Encoding.UTF8.GetString(resultArray);
+}
+}
+}
+
+Read All Text to string and Read all Line to array form a Text File (C#)
+string path = @"c:\temp\MyTest.txt";
+// Open the file to read from.
+string readText = File.ReadAllText(path);
+string[] readText = File.ReadAllLines(path);
+
+Split Text using separator in C#
+string source = "ONE|TWO|THREE";
+string[] stringSeparators = new string[] {"|"};
+string[] result= source.Split(stringSeparators, StringSplitOptions.None);
+
+Access Field by Name on Form (Formscript/Javascript)
+var myAttribute = Xrm.Page.getAttribute("name
+Access Field by Index on Form (Formscript/Javascript)
+var myAttribute = Xrm.Page.getAttribute(0);
+
+Get all Attributes on Form (Formscript/Javascript)
+var allAttributes = Xrm.Page.getAttribute();
+
+Get All optionset Attributes of the Form
+var optionsetAttributes =
+Xrm.Page.getAttribute(
+function (attribute, index) {
+return attribute.getAttributeType() == "optionset";
+});
+
+Alert All attributes with Required Validation of the Form (Javascript)
+function AlertRequiredAttributes () {
+Xrm.Page.data.entity.attributes.forEach(
+function (attribute, index) {
+if (attribute.getRequiredLevel() == "required")
+{ alert(attribute.getName()); }
+});
+}
+Get the Value of a field/attribute on form (Javascript)
+var fieldvalue= Xrm.Page.getAttribute("name").getValue
+Set the Value of a field/attribute on form (Javascript)
+Xrm.Page.getAttribute("name").setValue("new
+Get the text value of the currently selected option of an optionset attribute (Javascript)
+var addressType = Xrm.Page.getAttribute("address1_addresstypecode").getText
+Get the currently selected option object in an optionset attribute (Javascript)
+var addressTypeOption = Xrm.Page.getAttribute("address1_addresstypecode").getSelectedOption
+Get the type of attribute (Javascript)
+var attributeType = Xrm.Page.getAttribute("address1_addresstypecode").getAttributeType
+Get how the attribute is formatted (Javascript)
+var attributeFormat = Xrm.Page.getAttribute(0).getFormat();
+
+Get the initial value of a Booleanor Optionset attribute (Javascript)
+var attributeInitialValue = Xrm.Page.getAttribute("address1_addresstypecode").getInitialValue
+Determine whether an attribute value has changed (Javascript)
+var isNameChanged = Xrm.Page.getAttribute("name").getIsDirty
+Get Maximum Value of a Field (Javascript)
+Var limitMaxvalue =  Xrm.Page.getAttribute("creditlimit").getMax
+Get the maximum allowed length for an attribute that contains a string (Javascript)
+var maxNameLen=  Xrm.Page.getAttribute("name").getMaxLength
+Get MInimum Value of a Field (Javascript)
+Var limitMinvalue =  Xrm.Page.getAttribute("creditlimit").getMin
+Get the logical name of an attribute (Javascript)
+var attributeName = Xrm.Page.getAttribute("creditlimit").getName
+Get the Option set text by value of attribute (Javascript)
+var addressTypeOption = Xrm.Page.getAttribute("address1_addresstypecode").getOption(1aaddressTypeOption.text); //displays 'Bill To'
+
+Get the requirement level of an attribute (Javascript)
+var creditLimitRequired = Xrm.Page.getAttribute("creditlimit").getRequiredLevel
+Set the requirement level of an attribute as Required (Javascript)
+Xrm.Page.getAttribute("creditlimit").setRequiredLevel("requirednone/ recommended
+
+Check if the data in an attribute will be submitted when the data is saved (Javascript)
+var nameSubmitMode = Xrm.Page.getAttribute("name").getSubmitModeays/never/ dirty
+
+Control whether data in an attribute will be saved when the record is saved
+Xrm.Page.getAttribute("name").setSubmitMode("always
+Prevent a record from being saved.
+function My_PreventSaveFunction(eContext) {
+eContext.getEventArgs().preventDefault();
+}
+//NOTE: Use the eContext parameter to capture the execution context and use the preventDefault method included with the event arguments.
+
+Determine what action initiated the save.event (Javascript)
+function GetSaveModeTextFunction(eContext) {
+var saveModeCode = eContext.getEventArgs().getSaveMode();
+var saveModeText = "Unknown";
+switch (saveModeCode) {
+case 1:
+saveModeText = "Save";
+break;
+case 2:
+saveModeText = "SaveAndClose";
+break;
+case 5:
+saveModeText = "Deactivate";
+break;
+case 6:
+saveModeText = "Reactivate";
+break;
+case 7:
+saveModeText = "Send";
+break;
+case 15:
+saveModeText = "Disqualify";
+break;
+case 16:
+saveModeText = "Qualify";
+break;
+case 47:
+saveModeText = "Assign";
+break;
+case 58:
+saveModeText = "SaveAsCompleted";
+break;
+case 59:
+saveModeText = "SaveAndNew";
+break;
+case 70:
+saveModeText = "AutoSave";
+break;
+}
+return saveModeText;
+}
+//NOTE :Pass the execution context from event handler screen
+Display a notification message near the field control to indicate that data is not valid. (Javascript)
+Xrm.Page.getAttribute("name").controls.forEach (control, i) {
+control.setNotification("'Input Value' is not valid.");
+})
+
+Remove a notification message already displayed for a control.
+Xrm.Page.getAttribute("name").controls.forEach (control, i) {
+control.clearNotification();
+})
+
+Display form level notifications message (javascript)
+Xrm.Page.ui.setFormNotification(
+"Hello",
+"INFO",
+"myMsg"
+);
+// myMsg is a uniquid used while displaying the message.
+Remove form level notifications message (Javascript)
+Xrm.Page.ui.clearFormNotification("myMsg");
+
+
+
+Display a non-blocking alert dialog with a callback function
+var alertDisplayedFlag = false;
+Xrm.Utility.alertDialog(
+"Showing Alert Window",
+function () { alertDisplayedFlag = true; }
+)
+//NOTE: Display an alert and set the value of the alertDisplayedFlag variable when it is closed.
+
+Display a non-blocking confirm dialog with different callbacks depending on the button clicked by the user.
+var agree = false;
+Xrm.Utility.confirmDialog(
+"Do you agree?",
+function () { agree = true;},
+function () { agree = false; }
+);
+
+Access all the controls for a specific attribute
+var nameControls = Xrm.Page.getAttribute("name").controls.get
+Access a control by name
+var nameControl = Xrm.Page.getControl("name
+Access a control by index
+var firstControl = Xrm.Page.getControl(0);
+
+Access all controls
+var allControls = Xrm.Page.getControl();
+
+Get all optionset controls
+var optionsetControls = Xrm.Page.getControl(function (control, index) {
+return control.getControlType() == "optionset";
+})
+
+Get all controls of a specific section of a Tab
+var generalTabAccountInfoSectionControls = Xrm.Page.ui.tabs.get("general").sections.get("address").controls.get
+Disable all controls for an attribute
+Xrm.Page.getAttribute("name").controls.forEach(function index) { control.setDisabled(true); });
+Access a field from header section with attribute name is customername
+var nameControlInHeader = Xrm.Page.getControl("header_customername
+Access a field control from business process flow
+var nameControlInBPF = Xrm.Page.getControl("header_process_name
+Check if a control is Visible
+var isNameVisible = Xrm.Page.getControl("name").getVisible
+Hide or show a control of a field
+Xrm.Page.getControl("name").setVisible(false
+Get a reference to the attribute for the control
+var nameAttribute = Xrm.Page.getControl("name").getAttribute
+Get all optionset controls
+var optionSetControls = Xrm.Page.getControl(function (control, index) { return control.getControlType() == "optionset"; });
+
+Return all disabled controls
+var disabledControls = Xrm.Page.getControl(function(control, index) { return control.getDisabled(); });
+
+Disable or enable each control
+Xrm.Page.getAttribute("name").controls.forEach(function index) { control.setDisabled(true); });
+
+Get the label for a control
+var nameControlLabel = Xrm.Page.getControl("name").getLabel
+Change the label for a control
+Xrm.Page.getControl("name").setLabel("Company
+Get the name of a control
+var firstControlName = Xrm.Page.getControl(0).getName();
+
+Get the parent of a control
+var parentSection = Xrm.Page.getControl("name").getParent
+Set focus on a control
+Xrm.Page.getControl("name").setFocus
+Add an option to an optionset control
+var addressTypeCodeControl = Xrm.Page.getControl("address1_addresstypecodear billToAddressOption = addressTypeCodeControl.getAttribute().getOption(1);
+addressTypeCodeControl.clearOptions();
+addressTypeCodeControl.addOption(billToAddressOption);
+Remove all the options from an optionset control
+Xrm.Page.getControl("address1_addresstypecode").clearOptions
+Remove a single option from an optionset control.
+Xrm.Page.getControl("address1_addresstypecode").removeOption(1
+Get the URL for the content currently displayed in an IFRAME.
+var iframeSource = Xrm.Page.getControl("IFRAME_targetPage").getSrc
+Set the URL for the content to be displayed in an IFRAME.
+Xrm.Page.getControl("IFRAME_targetPage").setSrc("http://www.bing.com
+Add a custom view for a lookup.
+var viewId = "{C7034F4F-6F92-4DD7-BD9D-9B9C1E996380}";
+var viewDisplayName = "SDK Sample View";
+var fetchXml = ""+
+""+
+""+
+""+
+""+
+""+
+""+
+""+
+""+
+""+
+""+
+""+
+""+
+""+
+""+
+""+
+"";
+var layoutXml = ""+
+""+
+""+
+""+
+""+
+""+
+""+
+""+
+"";
+Xrm.Page.getControl("parentaccountid").addCustomView(viewId", viewDisplayName, fetchXml, layoutXml, true);
+Get and Set the default view for a lookup.
+var defaultViewId = Xrm.Page.getControl("parentaccountid").getDefaultViewewId = "{C7034F4F-6F92-4DD7-BD9D-9B9C1E996380}";
+Xrm.Page.getControl("parentaccountid").setDefaultView(viewId
+Filter the records returned for a lookup control
+var Sdk = window.Sdk || {};
+Sdk.filterCustomerAccounts = function () {
+//Only show accounts with the type 'Preferred Customer'
+var customerAccountFilter = "";
+Xrm.Page.getControl("parentaccountid").addCustomFilter(customerAccountFilter");
+}
+//set 'Sdk.setParentAccountIdFilter' in the Opportunity form Onload event handler
+Sdk.setParentAccountIdFilter = function () {
+Xrm.Page.getControl("parentaccountid").addPreSearch(Sdk.filterCustomerAccounts
+Refresh the data displayed in the subgrid
+Xrm.Page.getControl("accountcontactsgrid").refresh
+Specify whether a date control should show the time portion of the date.
+Xrm.Page.getControl("createdon").setShowTime(false
+Form Navigation Scripts, Tabs and Sections Script and other important scripts
+Task	Method	Example
+Get the name of a navigation item	getId	var navItemIds = [];
+Xrm.Page.ui.navigation.items.forEach(
+function (item, index)
+{ navItemIds.push(item.getId()) }
+);Create a navItemIds array that contains the id values of each navigation item in the Xrm.Page.ui.navigation.items collection.
+Get the label of a navigation item.	getLabel	var navAddressesLabel = Xrm.Page.ui.navigation.items.get(“navAddresses”).getLabel();
+Assign the label for the More Addresses navigation item to the navAddressesLabel variable.
+Set the label of a navigation item	setLabel	Xrm.Page.ui.navigation.items.get(“navAddresses”).setLabel(“Other Addresses”);
+Change the More Addresses navigation item label to Other Addresses.
+Show or hide a navigation item	setVisible	Xrm.Page.ui.navigation.items.get(“navAddresses”).setVisible(false);
+Hide the More Addresses navigation item.
+Determine if a navigation item is visible	getVisible	var moreAddressesVisible = Xrm.Page.ui.navigation.items.get(“navAddresses”).getVisible()
+Assign a Boolean value to the moreAddressesVisible variable to represent whether the More Addresses navigation item is visible.
+Set focus on a navigation item.	setFocus	Xrm.Page.ui.navigation.items.get(“navAddresses”).setFocus();
+Set focus on the More Addresses navigation item.
+Determine if a tab is expanded or collapsed	getDisplayState	var isGeneralTabExpanded = (Xrm.Page.ui.tabs.get(“general”).getDisplayState() == “expanded”)
+Assign a Boolean value to the isGeneralTabExpanded variable that indicates whether the General tab is expanded.
+Expand or collapse a tab	setDisplayState	Xrm.Page.ui.tabs.get(“general”).setDisplayState(“collapsed”);
+Collapse the General tab.
+Determine if a tab is visible	getVisible	var isGeneralTabVisible = Xrm.Page.ui.tabs.get(“general”).getVisible();
+Assign a Boolean value to the isGeneralTabVisible variable indicating whether the Generaltab is visible.
+Show or hide a tab	setVisible	Xrm.Page.ui.tabs.get(“general”).setVisible(false);
+Hide the General tab.
+Get the label for a tab	getLabel	var generalTabLabel = Xrm.Page.ui.tabs.get(“general”).getLabel();
+Assign the General tab label to the generalTabLabel variable.
+Change the label for a tab	setLabel	Xrm.Page.ui.tabs.get(“general”).setLabel(“Major”);
+Change the General tab label to Major.
+Set focus on a tab	setFocus	Xrm.Page.ui.tabs.get(“general”).setFocus();
+Set focus on the General tab.
+Get the name of the tab	getName	var firstTabName = Xrm.Page.ui.tabs.get(0).getName();
+Assign the name of the first tab to the firstTabName variable.
+Get the parent tab of a section	getParent	Xrm.Page.getControl(“industrycode”).getParent().getParent().setFocus();
+Set focus on the tab that contains the Industry field.
+Determine if a section is visible	getVisible	var industrySectionVisible = Xrm.Page.getControl(“industrycode”).getParent().getVisible();
+Assign a Boolean value to the industrySectionVisible variable indicating whether the section containing the Industry field is visible.
+Show or hide a section	setVisible	Xrm.Page.getControl(“industrycode”).getParent().setVisible(false);
+Hide the section that contains the Industry field.
+Get the label for a section	getLabel	var industryFieldSectionLabel = Xrm.Page.getControl(“industrycode”).getParent().getLabel();
+Assign the label of the section containing the Industry field to the industryFieldSectionLabel variable.
+Change the label for a section	setLabel	Xrm.Page.getControl(“industrycode”).getParent().setLabel(“Detailed Information”);
+Change the label of the section that contains the Industry field to Detailed Information.
+Add a function to the OnSaveevent	addOnSave	Xrm.Page.data.entity.addOnSave(myFunction);
+Add the myFunction function to the OnSave event.
+Remove a function from the OnSaveevent	removeOnSave	Xrm.Page.data.entity.removeOnSave(myFunction);
+Remove the myFunction function to the OnSave event.
+Add a function to the OnChangeevent of an attribute.	addOnChange	Xrm.Page.getAttribute(“name”).addOnChange(myFunction);
+Add the myFunction function to the OnChange event of the Account Name field.
+Remove a function from the OnChangeevent of an attribute	removeOnChange	Xrm.Page.getAttribute(“name”).removeOnChange(myFunction);
+Remove the myFunction function to the OnChange event of the Account Name field.
+Add a function to the PreSearchevent of a lookup control	addPreSearch	The following code sample is for the Opportunity form Account (parentaccountid) lookup. When the Sdk.setParentAccountIdFilter function is set in the form Onloadevent handler, the Sdk.filterCustomAccounts function is added to the PreSearch event for that lookup. The result is that only accounts with the Category(accountcategorycode) value of Preferred Customer (1) will be returned.
+JavaScript
+var Sdk = window.Sdk || {};
+Sdk.filterCustomerAccounts = function () {
+//Only show accounts with the type ‘Preferred Customer’
+var customerAccountFilter = ““;
+Xrm.Page.getControl(“parentaccountid”).addCustomFilter(customerAccountFilter, “account”);
+}
+//set ‘Sdk.setParentAccountIdFilter’ in the Opportunity form Onload event handler
+Sdk.setParentAccountIdFilter = function () {
+Xrm.Page.getControl(“parentaccountid”).addPreSearch(Sdk.filterCustomerAccounts);
+}
+Get the URL to connect to the organization.	getClientUrl	var serverUrl = Xrm.Page.context.getClientUrl();
+Assign a string that represents the URL to the serverUrlvariable.
+Get the unique identifier for the current user.	getUserId	var userId = Xrm.Page.context.getUserId();
+Assign a string that represents the user’s Id to the userId variable.
+Get the name of the current user.	getUserName	var userName = Xrm.Page.context.getUserName();
+Assign a string that represents the user’s name to the userName variable.
+This method is only available for Updated entities.
+Get the language code that represents the user’s preferred user interface language.	getUserLcid	var userLCID = Xrm.Page.context.getUserLcid();
+Assign a number that indicates the user’s preferred language to the userLCID variable.
+Get an array of strings that represents the GUID values for each security role assigned to the current user and any teams that the user is associated with.	getUserRoles	var userRoles = Xrm.Page.context.getUserRoles();
+Assign an array of strings that represents the user’s security roles to the userRoles variable.
+Determine whether the script is running in the Microsoft Dynamics 365 for Outlook client.	client.getClient	var isOutlookClient = (Xrm.Page.context.client.getClient() == “Outlook”);
+Assign a Boolean value that represents whether your code is running in the Dynamics 365 for Outlook client to the isOutlookClient variable.
+Determine whether the user is working offine with the Microsoft Dynamics 365 for Microsoft Office Outlook with Offline Access client.	client.getClientState	var IsOffline = (Xrm.Page.context.client.getClientState() == “Offline”);
+Assign a Boolean value that represents whether the user is currently working offline to the IsOfflinevariable.
+Get the logical name of the current entity	getEntityName	var entityName = Xrm.Page.data.entity.getEntityName();
+Assign the logical entity name to the entityName variable.
+Get the value of the primary attribute for the current entity.
+The primary attribute is the value used to identify the record. For example contact.fullname.	getPrimaryAttributeValue	var primaryAttributeValue = Xrm.Page.data.entity.getPrimaryAttributeValue();
+Assign the value of the primary attribute to the primaryAttributeValue variable.
+This method is only available for Updated entities.
+Get the Id of the current record	getId	var recordId = Xrm.Page.data.entity.getId();
+Assign the id of the record to the recordId variable.
+Asynchronously refresh the data of the form without reloading the page.	refresh	Xrm.Page.data.refresh();
+Refreshes the data in the form.
+This method is only available for Updated entities.
+Save the current record	Xrm.Page.data.entity.save	Xrm.Page.data.entity.save();
+Saves the record. There are optional arguments. Use saveandcloseor saveandnew to perform the equivalent actions.
+Save the current record asynchronously with the option to set
+callback functions to be executed after the save operation is completed.	Xrm.Page.data.save	Xrm.Page.data.save().then(
+function(){
+Xrm.Utility.alertDialog(“Record saved”);
+},
+function(error){
+Xrm.Utility.alertDialog(error.message);
+});Saves the record and displays a message showing the status of the save.
+This method is only available for Updated entities.
+Determine whether any data in the current record is changed.	getIsDirty	var isDirty = Xrm.Page.data.entity.getIsDirty();
+Assign a Boolean value that represents whether data in the record has changed to the isDirty variable.
+Get a string that represents the data that will be sent to the server when the record is saved.	getDataXml	var dataXml = Xrm.Page.data.entity.getDataXml();
+Assign a string that represents the data to be saved to the dataXmlvariable.
